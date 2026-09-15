@@ -1,0 +1,39 @@
+syntax = "proto3";
+
+import "google/protobuf/empty.proto";
+
+package users;
+
+service UserService{
+  rpc SayHello(google.protobuf.Empty) returns (GreetingResponse);
+
+  rpc GetUser(GetUserRequest) returns (User);
+
+  rpc ListUsers(google.protobuf.Empty) returns (UsersList);
+
+  rpc StreamUsers(google.protobuf.Empty) returns (stream User);
+
+  rpc ImportUsers(stream User) returns (ImportUsersResponse);
+
+}
+
+message GetUserRequest{
+  int32 id = 1;
+}
+
+message User{
+  int32  id   = 1;
+  string name = 2;
+}
+
+message GreetingResponse{
+  string greeting = 1;
+}
+
+message UsersList {
+  repeated User users = 1;
+}
+
+message ImportUsersResponse {
+  int32 count = 1;
+}
