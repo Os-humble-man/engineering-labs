@@ -44,37 +44,40 @@ engineering-labs/
 ├── 01-grpc/
 │   └── README.md
 │
-├── 02-websocket/
+├── 02-trpc/
 │   └── README.md
 │
-├── 03-redis-cache/
+├── 03-websocket/
 │   └── README.md
 │
-├── 04-rabbitmq/
+├── 04-redis-cache/
 │   └── README.md
 │
-├── 05-event-driven/
+├── 05-rabbitmq/
 │   └── README.md
 │
-├── 06-microservices/
+├── 06-event-driven/
 │   └── README.md
 │
-├── 07-api-gateway/
+├── 07-microservices/
 │   └── README.md
 │
-├── 08-resilience/
+├── 08-api-gateway/
 │   └── README.md
 │
-├── 09-cqrs/
+├── 09-resilience/
 │   └── README.md
 │
-├── 10-event-sourcing/
+├── 10-cqrs/
 │   └── README.md
 │
-├── 11-opentelemetry/
+├── 11-event-sourcing/
 │   └── README.md
 │
-└── 12-kubernetes/
+├── 12-opentelemetry/
+│   └── README.md
+│
+└── 13-kubernetes/
     └── README.md
 ```
 
