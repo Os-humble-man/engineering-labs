@@ -89,7 +89,7 @@ The structure may evolve as new concepts are explored.
 
 | # | Lab | Main Concepts | Status |
 |---|---|---|---|
-| 01 | [gRPC](./01-grpc) | Protocol Buffers, RPC, HTTP/2, Streaming | Planned |
+| 01 | [gRPC](./01-grpc) | Protocol Buffers, RPC, HTTP/2, Streaming | Completed |
 | 02 | [WebSocket](./02-websocket) | Real-time communication, persistent connections | Planned |
 | 03 | [Redis Cache](./03-redis-cache) | Caching, TTL, cache invalidation | Planned |
 | 04 | [RabbitMQ](./04-rabbitmq) | Queues, producers, consumers, workers | Planned |
