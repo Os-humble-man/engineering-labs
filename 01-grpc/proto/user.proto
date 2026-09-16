@@ -17,6 +17,8 @@ service UserService{
 
   rpc Chat(stream ChatMessage) returns (stream ChatMessage);
 
+  rpc SlowOperation(google.protobuf.Empty) returns (GreetingResponse);
+
 }
 
 message GetUserRequest{

@@ -6,7 +6,8 @@
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
     "server": "tsx server/index.ts",
-    "client": "tsx client/index.ts"
+    "client": "tsx client/index.ts",
+    "proto:generate": "proto-loader-gen-types --keepCase --longs=String --enums=String --defaults --oneofs --grpcLib=@grpc/grpc-js --targetFileExtension=.ts --importFileExtension=.js --outDir=generated proto/user.proto"
   },
   "keywords": [],
   "author": "",

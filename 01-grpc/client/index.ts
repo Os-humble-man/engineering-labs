@@ -1,16 +1,8 @@
 import * as grpc from "@grpc/grpc-js";
 import * as protoLoader from "@grpc/proto-loader";
+import type { ProtoGrpcType } from "../generated/user.js";
 
 import { fileURLToPath } from "node:url";
-
-type User = {
-  id: number;
-  name: string;
-};
-type ChatMessage = {
-  sender: string;
-  message: string;
-};
 
 const PROTO_PATH = fileURLToPath(
   new URL("../proto/user.proto", import.meta.url),
@@ -24,50 +16,19 @@ const packageDefinition = protoLoader.loadSync(PROTO_PATH, {
   oneofs: true,
 });
 
-const grpcObject = grpc.loadPackageDefinition(packageDefinition);
-const usersPackage = grpcObject.users as grpc.GrpcObject;
-const UserService = usersPackage.UserService as grpc.ServiceClientConstructor;
+const grpcObject = grpc.loadPackageDefinition(
+  packageDefinition,
+) as unknown as ProtoGrpcType;
+const UserService = grpcObject.users.UserService;
 
-const client = new UserService(
+const metadata = new grpc.Metadata();
+metadata.set("authorization", "Bearer abc123");
+metadata.set("request-id", "req-123");
+
+const userClient = new UserService(
   "localhost:50051",
   grpc.credentials.createInsecure(),
 );
-
-type UserServiceClient = grpc.Client & {
-  sayHello(
-    request: Record<string, never>,
-    callback: (
-      error: grpc.ServiceError | null,
-      response: { greeting: string },
-    ) => void,
-  ): grpc.ClientUnaryCall;
-
-  getUser(
-    request: { id: number },
-    callback: (error: grpc.ServiceError | null, response: User) => void,
-  ): grpc.ClientUnaryCall;
-
-  listUsers(
-    request: Record<string, never>,
-    callback: (
-      error: grpc.ServiceError | null,
-      response: { users: User[] },
-    ) => void,
-  ): grpc.ClientUnaryCall;
-
-  streamUsers(request: Record<string, never>): grpc.ClientReadableStream<User>;
-
-  importUsers(
-    callback: (
-      error: grpc.ServiceError | null,
-      response: { count: number },
-    ) => void,
-  ): grpc.ClientWritableStream<User>;
-
-  chat(): grpc.ClientDuplexStream<ChatMessage, ChatMessage>;
-};
-
-const userClient = client as unknown as UserServiceClient;
 
 userClient.sayHello({}, (error, reponse) => {
   if (error) {
@@ -78,7 +39,7 @@ userClient.sayHello({}, (error, reponse) => {
   console.log("Response :", reponse);
 });
 
-userClient.getUser({ id: 999 }, (error, response) => {
+userClient.getUser({ id: 999 }, metadata, (error, response) => {
   if (error) {
     console.error(error.details);
     return;
@@ -120,7 +81,7 @@ stream.on("error", (error) => {
   console.error("Stream error:", error.message);
 });
 
-const newUsers: User[] = [
+const newUsers = [
   { id: 10, name: "Paul" },
   { id: 11, name: "Sarah" },
   { id: 12, name: "Marc" },
@@ -167,6 +128,26 @@ chatStream.write({
   sender: "client",
   message: "This is gRPC bidi streaming",
 });
+
+chatStream.end();
+
+const deadline = new Date(Date.now() + 6000);
+
+userClient.slowOperation(
+  {},
+  {
+    deadline,
+  },
+  (error, response) => {
+    if (error) {
+      console.error("Code:", error.code);
+      console.error("Details:", error.details);
+      return;
+    }
+
+    console.log(response);
+  },
+);
 
 // let count = 0;
 
