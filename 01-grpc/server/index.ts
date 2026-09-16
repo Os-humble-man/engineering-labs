@@ -8,6 +8,11 @@ type User = {
   name: string;
 };
 
+type ChatMessage = {
+  sender: string;
+  message: string;
+};
+
 type ImportUsersResponse = {
   count: number;
 };
@@ -117,6 +122,20 @@ const importUsers: grpc.handleClientStreamingCall<User, ImportUsersResponse> = (
   });
 };
 
+const chat: grpc.handleBidiStreamingCall<ChatMessage, ChatMessage> = (call) => {
+  call.on("data", (message) => {
+    console.log("Received:", message);
+    call.write({
+      sender: "server",
+      message: `Received: ${message.message}`,
+    });
+  });
+
+  call.on("end", () => {
+    call.end();
+  });
+};
+
 const server = new grpc.Server();
 
 server.addService(UserService.service, {
@@ -125,6 +144,7 @@ server.addService(UserService.service, {
   listUsers,
   streamUsers,
   importUsers,
+  chat,
 });
 
 const PORT = "0.0.0.0:50051";
