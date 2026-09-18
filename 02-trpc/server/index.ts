@@ -1,8 +1,10 @@
-import { createHTTPServer } from "@trpc/server/adapters/standalone";
+import {  createHTTPServer } from "@trpc/server/adapters/standalone";
 import { appRouter } from "./appRouter.js";
+import {createContext} from "./context.js"
 
 const server = createHTTPServer({
   router: appRouter,
+  createContext
 });
 
 const PORT = 7222;

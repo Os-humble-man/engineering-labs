@@ -1,5 +1,10 @@
-import { input, string, z } from "zod";
-import { publicProcedure, router } from "./trcp.js";
+import { router } from "./trcp.js";
+import { userRoutes } from "./routers/user.js";
+
+type User = {
+  id: string;
+  name: string;
+};
 
 let users: User[] = [
   { id: "1", name: "Oscar" },
@@ -9,37 +14,6 @@ let users: User[] = [
   { id: "5", name: "Emma" },
 ];
 
-type User = {
-  id: string;
-  name: string;
-};
-
-export const appRouter = router({
-  userCreate: publicProcedure
-    .input(z.object({ name: z.string() }))
-    .mutation(async (opts) => {
-      const { input } = opts;
-      let generatedId = users.length + 1;
-
-      const user: User = { id: generatedId.toString(), name: input.name };
-
-      users.push(user);
-
-      return user;
-    }),
-  userList: publicProcedure.query(async () => {
-    return users;
-  }),
-  userById: publicProcedure.input(z.string()).query(async (opts) => {
-    const { input } = opts;
-    return users.find((user) => user.id === input);
-  }),
-
-  userRemove: publicProcedure
-    .input(z.string()).query(async (opts)=>{
-      const {input} = opts;
-       return (users = users.filter((user) => user.id === input));
-    })
-});
+export const appRouter = router(userRoutes(users));
 
 export type AppRouter = typeof appRouter;
