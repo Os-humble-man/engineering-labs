@@ -15,6 +15,7 @@ As software systems grow, understanding frameworks is not enough.
 Concepts such as:
 
 - gRPC
+- tRPC
 - Message queues
 - Microservices
 - Event-driven architecture
@@ -90,17 +91,18 @@ The structure may evolve as new concepts are explored.
 | # | Lab | Main Concepts | Status |
 |---|---|---|---|
 | 01 | [gRPC](./01-grpc) | Protocol Buffers, RPC, HTTP/2, Streaming | Completed |
-| 02 | [WebSocket](./02-websocket) | Real-time communication, persistent connections | Planned |
-| 03 | [Redis Cache](./03-redis-cache) | Caching, TTL, cache invalidation | Planned |
-| 04 | [RabbitMQ](./04-rabbitmq) | Queues, producers, consumers, workers | Planned |
-| 05 | [Event-Driven Architecture](./05-event-driven) | Events, publishers, subscribers | Planned |
-| 06 | [Microservices](./06-microservices) | Service boundaries, inter-service communication | Planned |
-| 07 | [API Gateway](./07-api-gateway) | Routing, aggregation, centralized entry point | Planned |
-| 08 | [Resilience](./08-resilience) | Retry, timeout, circuit breaker, fallback | Planned |
-| 09 | [CQRS](./09-cqrs) | Commands, queries, separation of responsibilities | Planned |
-| 10 | [Event Sourcing](./10-event-sourcing) | Event store, state reconstruction | Planned |
-| 11 | [OpenTelemetry](./11-opentelemetry) | Traces, metrics, distributed observability | Planned |
-| 12 | [Kubernetes](./12-kubernetes) | Pods, deployments, services, orchestration | Planned |
+| 02 | [tRPC](./02-trpc) | End-to-end type safety, procedures, context, middleware | In Progress |
+| 03 | [WebSocket](./03-websocket) | Real-time communication, persistent connections | Planned |
+| 04 | [Redis Cache](./04-redis-cache) | Caching, TTL, cache invalidation | Planned |
+| 05 | [RabbitMQ](./05-rabbitmq) | Queues, producers, consumers, workers | Planned |
+| 06 | [Event-Driven Architecture](./06-event-driven) | Events, publishers, subscribers | Planned |
+| 07 | [Microservices](./07-microservices) | Service boundaries, inter-service communication | Planned |
+| 08 | [API Gateway](./08-api-gateway) | Routing, aggregation, centralized entry point | Planned |
+| 09 | [Resilience](./09-resilience) | Retry, timeout, circuit breaker, fallback | Planned |
+| 10 | [CQRS](./10-cqrs) | Commands, queries, separation of responsibilities | Planned |
+| 11 | [Event Sourcing](./11-event-sourcing) | Event store, state reconstruction | Planned |
+| 12 | [OpenTelemetry](./12-opentelemetry) | Traces, metrics, distributed observability | Planned |
+| 13 | [Kubernetes](./13-kubernetes) | Pods, deployments, services, orchestration | Planned |
 
 ### Status
 
@@ -119,7 +121,8 @@ Communication
      │
      ├── HTTP
      ├── WebSocket
-     └── gRPC
+     ├── gRPC
+     └── tRPC
           │
           ▼
 Asynchronous Communication
@@ -197,6 +200,7 @@ Some of the technologies used or planned include:
 
 - REST
 - gRPC
+- tRPC
 - Protocol Buffers
 - WebSocket
 
@@ -395,6 +399,8 @@ The first experiments focus on communication between services.
 
 ```text
 gRPC
+  ↓
+tRPC
   ↓
 WebSocket
   ↓
