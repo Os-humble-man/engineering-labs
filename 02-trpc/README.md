@@ -80,6 +80,8 @@ tRPC standalone server
 │   └── index.ts
 │
 ├── server/
+│   ├── middleware/
+│   │   └── authmiddleware.ts
 │   ├── routers/
 │   │   └── user.ts
 │   ├── appRouter.ts
@@ -92,7 +94,7 @@ tRPC standalone server
 └── README.md
 ```
 
-`server/trcp.ts` initializes tRPC and exports the reusable router, public procedure, and protected procedure helpers.
+`server/trcp.ts` initializes tRPC and exports its reusable helpers. `server/middleware/authmiddleware.ts` defines the authentication middleware and builds `protectedProcedure` from `publicProcedure`.
 
 ---
 
@@ -197,7 +199,7 @@ This is intentionally not real authentication. The lab does not validate a JWT, 
 
 `publicProcedure` can be called without an authenticated user.
 
-`protectedProcedure` checks `ctx.user` and throws a tRPC error when it is absent:
+`authMiddleware` checks `ctx.user` and throws a tRPC error when it is absent:
 
 ```ts
 if (!ctx.user) {
@@ -205,6 +207,12 @@ if (!ctx.user) {
     code: "UNAUTHORIZED",
   });
 }
+```
+
+The protected base procedure is composed once and can then be reused by routers:
+
+```ts
+export const protectedProcedure = publicProcedure.use(authMiddleware);
 ```
 
 After that check, protected resolvers can use `ctx.user` as an authenticated user.

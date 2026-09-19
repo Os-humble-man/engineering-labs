@@ -1,5 +1,6 @@
 import { z } from "zod";
-import { protectedProcedure, publicProcedure } from "../trcp.js";
+import { protectedProcedure } from "../middleware/authmiddleware.js";
+import { publicProcedure } from "../trcp.js";
 
 type User = {
   id: string;
