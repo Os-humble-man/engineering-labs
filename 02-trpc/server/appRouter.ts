@@ -14,6 +14,8 @@ let users: User[] = [
   { id: "5", name: "Emma" },
 ];
 
-export const appRouter = router(userRoutes(users));
+export const appRouter = router({
+  user: router(userRoutes(users)),
+});
 
 export type AppRouter = typeof appRouter;

@@ -7,15 +7,15 @@ const trpc = createTRPCClient<AppRouter>({
   } })],
 });
 
-const users = await trpc.userList.query();
+const users = await trpc.user.list.query();
 
 
 
 // await trpc.userRemove.query('2')
-// await trpc.userRemove.query('4')
+// await trpc.user.remove.mutate('15');
 
-console.log(await trpc.userGreeting.morning.query())
-console.log(await trpc.userGreeting.evening.query())
+// console.log(await trpc.user.greeting.morning.query())
+// console.log(await trpc.user.greeting.evening.query())
 
 
 
