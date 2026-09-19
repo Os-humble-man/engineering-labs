@@ -1,5 +1,5 @@
 import { TRPCError } from "@trpc/server";
-import { middleware, publicProcedure } from "../trcp.js";
+import { middleware, publicProcedure } from "../trpc.js";
 
 export const authMiddleware = middleware(({ ctx, next }) => {
   if (!ctx.user) {

@@ -1,12 +1,12 @@
-# 02 — tRPC Lab
+# 02 - tRPC Lab
 
-A small hands-on lab created to understand how tRPC provides end-to-end type safety between a Node.js server and a TypeScript client.
+A small hands-on lab for understanding how tRPC provides end-to-end type safety between a Node.js server and a TypeScript client.
 
-The goal is not to build a production application. The project deliberately uses an in-memory user list and a standalone HTTP server so that the focus stays on tRPC itself.
+The project deliberately uses an in-memory user list and a standalone HTTP server so the focus stays on tRPC itself.
 
-This lab currently explores:
+This lab explores:
 
-- routers and procedures
+- routers and nested procedures
 - queries and mutations
 - runtime input validation with Zod
 - server-to-client type inference
@@ -18,56 +18,36 @@ This lab currently explores:
 
 ## Goal
 
-The main objective is to understand how a TypeScript client can call server procedures with fully inferred inputs and outputs, without a `.proto` file, OpenAPI document, or generated client.
-
-The central mechanism is:
+The objective is to understand how a TypeScript client can call server procedures with fully inferred inputs and outputs, without a `.proto` file, an OpenAPI document, or a generated client.
 
 ```text
 Server implementation
-        │
-        ▼
+        |
+        v
 typeof appRouter
-        │
-        ▼
+        |
+        v
 AppRouter type
-        │
-        ▼
+        |
+        v
 Typed tRPC client
 ```
 
-The server exports only the router type:
+The server exports the router type:
 
 ```ts
 export type AppRouter = typeof appRouter;
 ```
 
-The client consumes that type:
+The client imports it as a type and passes it to `createTRPCClient`:
 
 ```ts
-createTRPCClient<AppRouter>({ ... });
+import type { AppRouter } from "../server/appRouter.js";
+
+const trpc = createTRPCClient<AppRouter>({ ... });
 ```
 
-No server code is bundled into the client: `AppRouter` is a TypeScript type and disappears after compilation.
-
----
-
-## Architecture
-
-```text
-TypeScript client
-       │
-       │ HTTP requests through httpBatchLink
-       ▼
-tRPC standalone server
-       │
-       ├── createContext()
-       ├── publicProcedure
-       ├── protectedProcedure
-       └── user procedures
-              │
-              ▼
-       In-memory user list
-```
+`AppRouter` disappears after TypeScript compilation, so no server implementation is bundled into the client.
 
 ---
 
@@ -75,112 +55,96 @@ tRPC standalone server
 
 ```text
 02-trpc/
-│
-├── client/
-│   └── index.ts
-│
-├── server/
-│   ├── middleware/
-│   │   └── authmiddleware.ts
-│   ├── routers/
-│   │   └── user.ts
-│   ├── appRouter.ts
-│   ├── context.ts
-│   ├── index.ts
-│   └── trcp.ts
-│
-├── package.json
-├── tsconfig.json
-└── README.md
+|-- client/
+|   `-- index.ts
+|-- server/
+|   |-- middleware/
+|   |   `-- authmiddleware.ts
+|   |-- routers/
+|   |   `-- user.ts
+|   |-- appRouter.ts
+|   |-- context.ts
+|   |-- index.ts
+|   `-- trpc.ts
+|-- package.json
+|-- tsconfig.json
+`-- README.md
 ```
 
-`server/trcp.ts` initializes tRPC and exports its reusable helpers. `server/middleware/authmiddleware.ts` defines the authentication middleware and builds `protectedProcedure` from `publicProcedure`.
+- `server/trpc.ts` initializes tRPC and exports `router`, `middleware`, and `publicProcedure`.
+- `server/context.ts` creates the request context.
+- `server/middleware/authmiddleware.ts` defines `authMiddleware` and `protectedProcedure`.
+- `server/routers/user.ts` defines the procedures grouped under `user`.
+- `server/appRouter.ts` creates the root router and exports `AppRouter`.
+- `client/index.ts` creates the typed client and calls the API.
 
 ---
 
 ## Procedures Currently Implemented
 
+All user operations are grouped under the `user` router.
+
 | Procedure | Type | Access | Purpose |
 |---|---|---|---|
-| `userCreate` | Mutation | Public | Add a user to the in-memory list |
-| `userList` | Query | Protected | Return all users |
-| `userById` | Query | Public | Find a user by ID |
-| `userRemove` | Query for now | Public | Remove a user; this must become a mutation |
-| `userGreeting.morning` | Query | Public | Return a morning greeting |
-| `userGreeting.evening` | Query | Public | Return an evening greeting |
-
-This API is intentionally small. It exists to make the differences between queries, mutations, nested routers, validation, and protected procedures visible.
+| `user.create` | Mutation | Protected | Create and return a user |
+| `user.list` | Query | Protected | Return all users |
+| `user.byId` | Query | Protected | Find a user by ID |
+| `user.update` | Mutation | Protected | Update a user's name |
+| `user.remove` | Mutation | Protected | Remove a user by ID |
+| `user.me` | Query | Protected | Return the authenticated context user |
+| `user.greeting.morning` | Query | Public | Return a morning greeting |
+| `user.greeting.evening` | Query | Public | Return an evening greeting |
 
 ---
 
-## Query and Mutation
+## Queries and Mutations
 
-A query reads data and should not intentionally change server state:
-
-```ts
-userById: publicProcedure
-  .input(z.string())
-  .query(({ input }) => {
-    return users.find((user) => user.id === input);
-  });
-```
-
-A mutation performs a state-changing operation:
+Queries read data:
 
 ```ts
-userCreate: publicProcedure
-  .input(z.object({ name: z.string() }))
-  .mutation(({ input }) => {
-    // Create and return a user
-  });
+const users = await trpc.user.list.query();
+const user = await trpc.user.byId.query("2");
 ```
 
-`userRemove` still uses `.query()` in the current experiment. Converting it to `.mutation()` is one of the remaining learning steps.
+Mutations change server state:
+
+```ts
+const createdUser = await trpc.user.create.mutate({ name: "Alice" });
+
+await trpc.user.update.mutate({
+  id: "2",
+  name: "Jules",
+});
+
+await trpc.user.remove.mutate("2");
+```
+
+The list is stored in memory. Any changes are lost when the server stops.
 
 ---
 
 ## Zod Input Validation
 
-tRPC uses Zod schemas to validate untrusted input at runtime while also inferring its TypeScript type.
+tRPC uses Zod schemas to validate network input at runtime while inferring the corresponding TypeScript input types.
 
 ```ts
 z.object({
+  id: z.string(),
   name: z.string(),
 });
 ```
 
-This provides two complementary guarantees:
-
-```text
-Zod schema
-   ├── runtime validation
-   └── TypeScript inference
-```
-
-TypeScript protects callers during development, while Zod protects the running server from invalid network input.
+TypeScript catches invalid calls during development, while Zod rejects invalid input received by the running server.
 
 ---
 
 ## Context and Simulated Authentication
 
-`createContext()` runs for each HTTP request. In this lab, any `Authorization` header simulates an authenticated user:
+`createContext()` runs for every HTTP request. In this lab, the presence of an `Authorization` header simulates an authenticated user:
 
 ```text
-Authorization header present
-        ↓
-ctx.user exists
-        ↓
-protectedProcedure allowed
-```
-
-Without the header:
-
-```text
-No Authorization header
-        ↓
-ctx.user = null
-        ↓
-UNAUTHORIZED
+Authorization header present -> ctx.user exists -> protected procedure allowed
+No Authorization header      -> ctx.user is null -> protected procedure denied
 ```
 
 The client currently sends:
@@ -191,31 +155,15 @@ headers: {
 }
 ```
 
-This is intentionally not real authentication. The lab does not validate a JWT, load a database user, or implement sessions. Its only purpose is to demonstrate how request data flows through `createContext()` into a reusable middleware.
+This is not real authentication: the token is not validated. The example only demonstrates how request data flows through `createContext()` and a reusable middleware.
 
----
-
-## Public and Protected Procedures
-
-`publicProcedure` can be called without an authenticated user.
-
-`authMiddleware` checks `ctx.user` and throws a tRPC error when it is absent:
-
-```ts
-if (!ctx.user) {
-  throw new TRPCError({
-    code: "UNAUTHORIZED",
-  });
-}
-```
-
-The protected base procedure is composed once and can then be reused by routers:
+The protected base procedure is composed once:
 
 ```ts
 export const protectedProcedure = publicProcedure.use(authMiddleware);
 ```
 
-After that check, protected resolvers can use `ctx.user` as an authenticated user.
+Only the two greeting procedures remain public.
 
 ---
 
@@ -233,11 +181,7 @@ Start the server:
 npm run server
 ```
 
-The server listens on:
-
-```text
-http://localhost:7222
-```
+The server listens on `http://localhost:7222`.
 
 In another terminal, run the client:
 
@@ -264,74 +208,23 @@ npx tsc --noEmit
 | Generated service client | Client typed with `AppRouter` |
 | Native streaming support | Query/mutation model; subscriptions require additional setup |
 
-The important comparison is:
-
-```text
-gRPC                         tRPC
-
-.proto                       server router
-   ↓                              ↓
-code generation              typeof appRouter
-   ↓                              ↓
-typed client                 typed client
-```
-
-Both approaches provide strong contracts, but they obtain them in fundamentally different ways.
-
 ---
 
-## What I Have Learned So Far
+## Learning Progress
 
-- A router groups callable procedures.
-- Queries represent reads, while mutations represent state changes.
-- Zod validates network input at runtime and infers TypeScript types.
-- `typeof appRouter` exposes the complete API type to the client.
-- Context carries request-scoped information into procedures.
-- Middleware can turn a base procedure into a reusable protected procedure.
-- tRPC type safety does not replace runtime validation or authentication.
-
----
-
-## Remaining Learning Steps
-
-- [x] Initialize tRPC once on the server
-- [x] Create public queries and a mutation
+- [x] Initialize tRPC once in `server/trpc.ts`
+- [x] Create public and protected procedures
 - [x] Validate inputs with Zod
 - [x] Export and consume `AppRouter`
-- [x] Create request context
-- [x] Create a protected procedure
+- [x] Create request context and authentication middleware
 - [x] Simulate authentication with an HTTP header
-- [ ] Convert `userRemove` from a query to a mutation
-- [ ] Throw `TRPCError({ code: "NOT_FOUND" })` when a user does not exist
-- [ ] Add a protected `me` procedure
-- [ ] Group the API consistently under a `user` router
-- [ ] Add deliberate invalid-input and type-error experiments
-- [ ] Clean up names and unused code
-
----
-
-## What This Lab Does Not Cover
-
-The following topics are intentionally left for later experiments:
-
-- React
-- Next.js
-- TanStack Query
-- database persistence
-- Prisma
-- complete JWT authentication
-- sessions
-- WebSockets
-- advanced subscriptions
-- server-side rendering
-- production deployment
-
-Keeping these concerns out of the lab makes the core tRPC mechanism easier to understand.
+- [x] Group the API under the `user` router
+- [x] Implement create, list, lookup, update, and removal operations
+- [x] Use mutations for state-changing operations
+- [x] Add the protected `user.me` procedure
 
 ---
 
 ## Status
 
-**In Progress**
-
-The core end-to-end typing, validation, context, and protected-procedure concepts are implemented. Error handling, procedure semantics, API organization, and final cleanup still need to be completed.
+The core learning goals are implemented: end-to-end typing, validation, nested routing, context, protected procedures, and mutations. The project remains a learning lab rather than a production-ready application.

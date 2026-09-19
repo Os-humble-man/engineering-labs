@@ -1,4 +1,4 @@
-import { router } from "./trcp.js";
+import { router } from "./trpc.js";
 import { userRoutes } from "./routers/user.js";
 
 type User = {

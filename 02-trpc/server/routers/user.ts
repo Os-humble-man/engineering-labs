@@ -1,6 +1,6 @@
 import { z } from "zod";
 import { protectedProcedure } from "../middleware/authmiddleware.js";
-import { publicProcedure } from "../trcp.js";
+import { publicProcedure } from "../trpc.js";
 import { TRPCError } from "@trpc/server";
 
 type User = {
@@ -10,7 +10,7 @@ type User = {
 
 export const userRoutes = (users: User[]) => {
   return {
-    create: publicProcedure
+    create: protectedProcedure
       .input(z.object({ name: z.string() }))
       .mutation(async (opts) => {
         const { input } = opts;
@@ -24,7 +24,7 @@ export const userRoutes = (users: User[]) => {
       console.log("Context", ctx);
       return users;
     }),
-    byId: publicProcedure.input(z.string()).query(async (opts) => {
+    byId: protectedProcedure.input(z.string()).query(async (opts) => {
       const { input } = opts;
       const user = users.find((user) => user.id === input);
 
@@ -37,16 +37,32 @@ export const userRoutes = (users: User[]) => {
       return user;
     }),
 
-    remove: publicProcedure.input(z.string()).mutation(async ({ input }) => {
-      const exists = users.some((user) => user.id === input);
+    update: protectedProcedure
+      .input(z.object({ id: z.string(), name: z.string() }))
+      .mutation(async ({ input }) => {
+        const user = users.find((user) => user.id === input.id);
+        if (!user) {
+          throw new TRPCError({
+            code: "NOT_FOUND",
+            message: "User not found",
+          });
+        }
+        user.name = input.name;
+        return {
+          success: true,
+        };
+      }),
 
-      if (!exists) {
+    remove: protectedProcedure.input(z.string()).mutation(async ({ input }) => {
+      const index = users.findIndex((user) => user.id === input);
+
+      if (index === -1) {
         throw new TRPCError({
           code: "NOT_FOUND",
-          message: "user not found with ID" + input
+          message: `User not found with ID: ${input}`,
         });
       }
-      users = users.filter((user) => user.id !== input);
+      users.splice(index, 1);
 
       return {
         success: true,
